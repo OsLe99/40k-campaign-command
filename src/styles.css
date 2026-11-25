@@ -38,15 +38,11 @@ fieldset { min-width: 0; }
 .button-ghost:hover { background: var(--surface-raised); color: var(--foreground); }
 .button-danger { background: var(--danger-background); color: var(--danger-foreground); border-color: var(--danger-foreground); }
 .button:disabled { opacity: .5; cursor: not-allowed; }
-.hero { margin: 38px 0 64px; padding: 56px 54px; position: relative; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--hero-background); overflow: hidden; display: flex; align-items: center; min-height: 400px; }
+.hero { margin: 38px 0 64px; padding: 40px 54px; position: relative; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--hero-background); overflow: hidden; display: flex; align-items: center; min-height: 280px; }
 .hero-copy { z-index: 1; max-width: 600px; }
-.hero h1 { font-size: clamp(2.7rem, 5vw, 4.4rem); margin: 23px 0; line-height: 1.05; }
-.hero h1 em { font-style: normal; color: var(--primary); }
+.hero h1 { font-size: clamp(2rem, 4vw, 3rem); margin: 20px 0; line-height: 1.16; }
 .hero-copy > p:not(.eyebrow) { max-width: 420px; font-size: 14px; color: var(--muted); margin-bottom: 30px; }
 .hero-grid { position: absolute; inset: 0; background: var(--decoration); mask-image: linear-gradient(90deg, transparent, black); pointer-events: none; }
-.hero-sigil { margin-left: auto; display: grid; place-items: center; width: 260px; height: 290px; color: var(--primary); opacity: .55; }
-.hero-sigil > svg { width: 250px; height: 250px; grid-area: 1/1; }
-.hero-sigil > span { grid-area: 1/1; text-align: center; font-family: var(--heading-font); font-size: 18px; line-height: 1.5; letter-spacing: .15em; }
 .eyebrow { color: var(--primary); letter-spacing: .19em; font-size: 10px; font-weight: 650; margin-bottom: 16px; display: flex; align-items: center; gap: 9px; }
 .live-dot { width: 6px; height: 6px; background: var(--primary); border-radius: 100%; box-shadow: 0 0 10px color-mix(in srgb, var(--primary) 40%, transparent); }
 .page-header { display: flex; justify-content: space-between; gap: 24px; align-items: flex-end; margin: 44px 0 28px; }
@@ -148,9 +144,6 @@ code { font-family: Consolas, monospace; background: var(--surface-raised); padd
   .header-inner { gap: 24px; padding: 20px 24px; flex-wrap: wrap; }
   .main-nav { gap: 20px; }
   .hero { padding: 40px 30px; }
-  .hero-sigil { width: 180px; }
-  .hero-sigil svg { width: 180px; }
-  .hero-sigil span { font-size: 13px; }
   .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .page-header { align-items: flex-start; flex-direction: column; }
   .two-column { grid-template-columns: 1fr; }
@@ -161,9 +154,7 @@ code { font-family: Consolas, monospace; background: var(--surface-raised); padd
   .brand { font-size: 12px; }
   .main-nav { order: 3; width: 100%; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 10px; }
   .user-nav { font-size: 11px; gap: 8px; }
-  .hero { margin: 22px 0 38px; padding: 32px 23px; min-height: 370px; }
-  .hero-sigil { display: none; }
-  .hero h1 { font-size: 2.9rem; }
+  .hero { margin: 22px 0 38px; padding: 32px 23px; min-height: 280px; }
   .hero-copy > p:not(.eyebrow) { font-size: 13px; }
   .card-grid, .stats-grid, .form-grid, .gallery { grid-template-columns: 1fr; }
   .stats-grid { gap: 10px; }

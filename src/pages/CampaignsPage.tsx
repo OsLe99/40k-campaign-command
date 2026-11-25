@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowUpRight, CalendarDays, Flag, Plus, Shield } from 'lucide-react'
+import { ArrowUpRight, CalendarDays, Flag, Plus } from 'lucide-react'
 import { api } from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import { useAction } from '../hooks/useAction'
@@ -16,10 +16,10 @@ export function CampaignsPage() {
   return <>
     <section className="hero"><div className="hero-grid" aria-hidden="true" /><div className="hero-copy">
       <p className="eyebrow"><span className="live-dot" /> NARRATIVE CAMPAIGN COMMAND</p>
-      <h1>Every battle.<br /><em>A lasting legacy.</em></h1>
-      <p>Muster your forces. Record your victories. Shape the story of your next Warhammer 40,000 campaign.</p>
+      <h1>Campaign command</h1>
+      <p>Manage your Warhammer 40,000 campaigns, record battles, and track results.</p>
       <div className="actions"><Button asChild><Link to={user ? '/campaigns/new' : '/auth'}><Plus size={17} />{user ? 'Found a campaign' : 'Join the campaign'}</Link></Button><Button variant="ghost" onClick={() => document.getElementById('campaign-records')?.scrollIntoView({ behavior: 'smooth' })}>Explore the archives <ArrowUpRight size={16} /></Button></div>
-    </div><div className="hero-sigil" aria-hidden="true"><Shield strokeWidth={0.6} /><span>THE GALAXY<br />REMEMBERS</span></div></section>
+    </div></section>
     <PageHeader eyebrow="THE STRATEGIC OVERVIEW" title="Campaign archives" action={user && <Button asChild variant="outline"><Link to="/campaigns/new"><Plus size={16} />New campaign</Link></Button>}>
       Independent war zones. Shared stories. Only confirmed results count.
     </PageHeader>
