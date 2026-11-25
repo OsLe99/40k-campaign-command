@@ -52,6 +52,20 @@ Configure the hosted project's Auth site URL and allowed redirects to the actual
 
 Never put service-role/secret keys in `VITE_*` variables. Runtime configuration rejects recognized privileged keys, and production builds reject secret-prefixed keys and non-anon legacy JWTs. These checks are a safeguard, not permission to place secrets in frontend configuration.
 
+## Discord sign-in
+The sign-in and registration screens include **Continue with Discord** alongside email/password. Supabase handles Discord authorization, PKCE code exchange, and persistent sessions using the existing browser client. New OAuth users receive the same commander profile and no additional campaign/global privileges. No schema migration or extra frontend environment variable is needed.
+
+Before the button can complete a real login:
+1. Create an application in the [Discord Developer Portal](https://discord.com/developers/applications).
+2. In its OAuth2 settings, add `https://yfbmltvtrxhffmsbsgzr.supabase.co/auth/v1/callback` as a redirect. This is the **Supabase provider callback**, not the GitHub Pages URL.
+3. In this project's Supabase dashboard, open Authentication → Sign In / Providers → Discord. Enable the provider and enter the Discord application's client ID and client secret. Keep the client secret only in Supabase; never put it in `VITE_*`, GitHub Pages assets, source control, or chat. A Discord bot token is not needed.
+4. In Supabase Authentication → URL Configuration, set the production Site URL to `https://osle99.github.io/40k-campaign-command/`. Allow that exact application URL and, for development against the hosted project, `http://localhost:5173/40k-campaign-command/`. Add other development origins only if intentionally used. These are **application return URLs**, separate from Discord's callback.
+5. Test Continue with Discord in the deployed app, authorize the request, confirm the commander profile is available, then sign out and sign in again. Also test cancelling authorization and the email/password fallback. Start and finish authorization in the same browser/device.
+
+The application redirects to its own origin/base path, not a caller-supplied destination. Existing accounts remain managed by Supabase's identity rules; this feature does not implement manual account linking or merging. When using a different Supabase project, copy its callback from the provider settings instead. A disposable local Supabase stack requires its own provider configuration and the local Auth callback (`http://localhost:54321/auth/v1/callback`).
+
+Automated tests check initiation, PKCE/redirect parameters, pending/error states, and callback error parsing. Browser authorization is intercepted by a fixture; these checks do not prove that Discord credentials, provider configuration, or a real OAuth round trip work.
+
 ## Administrator bootstrap
 Every campaign creator becomes CampaignAdmin only within their campaign. Global administrator privileges are never read from editable signup metadata.
 

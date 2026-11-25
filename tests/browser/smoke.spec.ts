@@ -8,6 +8,29 @@ const campaign = {
   lore: 'The beacon has fallen silent.', status: 'Active', is_published: true,
   created_by: playerId, start_date: '2026-11-25', end_date: null, created_at: '2026-11-25T00:00:00Z', updated_at: '2026-11-25T00:00:00Z',
 }
+test('Discord sign-in starts a PKCE flow with the application base redirect', async ({ page }) => {
+  await page.route('http://127.0.0.1:54321/auth/v1/authorize**', route => route.fulfill({
+    status: 200, contentType: 'text/html', body: '<h1>Discord authorization fixture</h1>',
+  }))
+  await page.goto(`http://127.0.0.1:5176${path}#/auth`)
+  await expect(page.getByRole('button', { name: 'Continue with Discord' })).toBeVisible()
+  await expect(page.getByLabel('Email')).toBeVisible()
+  await page.getByRole('button', { name: 'Continue with Discord' }).click()
+  await expect(page.getByRole('heading', { name: 'Discord authorization fixture' })).toBeVisible()
+  const authorization = new URL(page.url())
+  expect(authorization.searchParams.get('provider')).toBe('discord')
+  expect(authorization.searchParams.get('redirect_to')).toBe(`http://127.0.0.1:5176${path}`)
+  expect(authorization.searchParams.get('code_challenge')).toBeTruthy()
+  expect(authorization.searchParams.get('code_challenge_method')).toBe('s256')
+})
+test('cancelled OAuth callbacks display errors without breaking auth routing', async ({ page }) => {
+  for (const callback of ['?error=access_denied&error_description=Discord+authorization+cancelled#/auth', '#error=access_denied&error_description=Discord+authorization+cancelled']) {
+    await page.goto(`http://127.0.0.1:5176${path}${callback}`)
+    await expect(page.getByText('Discord authorization cancelled', { exact: true })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Return to command' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Continue with Discord' })).toBeEnabled()
+  }
+})
 test('missing configuration gives clear setup instructions', async ({ page }) => {
   const errors: string[] = []
   page.on('pageerror', e => errors.push(e.message))

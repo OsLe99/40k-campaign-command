@@ -1,7 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '../types/database'
 import { publicConfigError } from './config'
+import { authCallbackError } from './auth'
 
+export const initialAuthError = authCallbackError(new URL(window.location.href))
 const url = import.meta.env.VITE_SUPABASE_URL?.trim()
 const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim()
 export const configurationError = publicConfigError(url, key)
