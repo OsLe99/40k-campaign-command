@@ -1,0 +1,2 @@
+-- Intentionally no remote users, credentials, or production-looking demo records.
+-- Deterministic test fixtures are isolated inside the database test transaction.
