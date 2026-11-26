@@ -7,6 +7,7 @@ import { db } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useAction } from '../hooks/useAction'
 import { Gallery, SignedImage } from '../components/Gallery'
+import { ArmyLists } from '../components/ArmyLists'
 import { Button } from '../components/ui/button'
 import { Empty, ErrorBox, Feedback, Field, Loading, PageHeader, Pagination, RequireLogin } from '../components/ui/shared'
 import type { Army } from '../types/domain'
@@ -61,6 +62,7 @@ export function ArmyPage() {
   return <><PageHeader eyebrow={a.faction} title={a.name} action={(owner || moderate) && <Button asChild variant="outline"><Link to={`/armies/${id}/edit`}>Edit army</Link></Button>}>
     <p>{a.subfaction}</p><Link to={`/players/${a.owner_id}`}>View commander →</Link></PageHeader><Feedback action={action} />
     <section className="panel"><p className="prose">{a.description || 'No army lore recorded.'}</p></section>
+    <ArmyLists key={id} armyId={id} canUpload={owner} canModerate={moderate} />
     <Gallery kind="army" id={id} canUpload={owner} canModerate={moderate}
       onMain={owner ? async path => {
         const { error } = await db().from('armies').update({ main_image_path: path }).eq('id', id)

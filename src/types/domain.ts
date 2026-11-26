@@ -7,6 +7,7 @@ export type Profile = Omit<Tables<'profiles'>, 'theme'> & { theme: ThemeId }
 export type Campaign = Omit<Tables<'campaigns'>, 'status'> & { status: CampaignStatus }
 export type Member = Omit<Tables<'campaign_members'>, 'role'> & { role: 'Member' | 'CampaignAdmin' }
 export type Army = Tables<'armies'>
+export type ArmyList = Tables<'army_lists'>
 export type Battle = Omit<Tables<'battles'>, 'status'> & { status: BattleStatus }
 export type Participant = Omit<Tables<'battle_participants'>, 'result'> & { result: Result }
 export type BattleResponse = Omit<Tables<'battle_responses'>, 'response'> & { response: 'Confirmed' | 'Disputed' }
