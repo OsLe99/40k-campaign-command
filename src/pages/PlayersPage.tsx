@@ -9,6 +9,7 @@ import { Badge, Empty, ErrorBox, Feedback, Field, Loading, PageHeader, Paginatio
 import { ArmyCards } from './ArmiesPage'
 import { AuditList } from './ManageCampaignPage'
 import { ThemeSettings } from '../components/ThemeSettings'
+import { AchievementPanel } from '../components/AchievementPanel'
 
 export function PlayersPage() {
   const [page, setPage] = useState(0)
@@ -24,6 +25,7 @@ export function PlayerPage() {
   const armies = useQuery({ queryKey: ['armies', id], queryFn: () => api.armies(id) })
   return <><ErrorBox error={q.error || armies.error} />{q.isPending ? <Loading /> : q.data && <>
     <PageHeader eyebrow={`@${q.data.username}`} title={q.data.display_name}>Commander since {new Date(q.data.created_at).toLocaleDateString()}</PageHeader>
+    <AchievementPanel playerId={id} />
     <h2>Mustered forces</h2>{armies.isPending ? <Loading /> : armies.data?.length ? <ArmyCards armies={armies.data} /> : <Empty>No armies recorded.</Empty>}
   </>}</>
 }
@@ -45,7 +47,7 @@ export function AccountPage() {
         <Button type="submit" disabled={action.pending}>Update profile</Button>
       </form>}</section>
       <section className="panel"><h2>Your battle reports</h2><p className="muted">Open pending reports to confirm or dispute them.</p>{battles.isPending ? <Loading /> : battles.data?.length ? battles.data.map(b => <Link key={b.id} className="list-row" to={`/battles/${b.id}`}><strong>{b.mission}</strong><Badge>{b.status}</Badge></Link>) : <Empty>No battle submissions yet.</Empty>}</section>
-    </div><ThemeSettings /></RequireLogin>
+    </div>{user && <AchievementPanel playerId={user.id} />}<ThemeSettings /></RequireLogin>
 }
 export function AdminPage() {
   const { user } = useAuth()

@@ -1,4 +1,4 @@
-import type { Tables } from './database.generated'
+import type { Database as NativeDatabase, Tables } from './database.generated'
 import type { ThemeId } from '../lib/themes'
 export type CampaignStatus = 'Upcoming' | 'Active' | 'Completed'
 export type BattleStatus = 'Pending' | 'Confirmed' | 'Disputed' | 'Rejected'
@@ -8,6 +8,7 @@ export type Campaign = Omit<Tables<'campaigns'>, 'status'> & { status: CampaignS
 export type Member = Omit<Tables<'campaign_members'>, 'role'> & { role: 'Member' | 'CampaignAdmin' }
 export type Army = Tables<'armies'>
 export type ArmyList = Tables<'army_lists'>
+export type AchievementSummary = NativeDatabase['public']['Functions']['achievement_summary']['Returns'][number]
 export type Battle = Omit<Tables<'battles'>, 'status'> & { status: BattleStatus }
 export type Participant = Omit<Tables<'battle_participants'>, 'result'> & { result: Result }
 export type BattleResponse = Omit<Tables<'battle_responses'>, 'response'> & { response: 'Confirmed' | 'Disputed' }

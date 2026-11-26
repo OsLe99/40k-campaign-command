@@ -598,6 +598,17 @@ export type Database = {
       }
     }
     Functions: {
+      achievement_summary: {
+        Args: { target_campaign?: string; target_player: string }
+        Returns: {
+          best_campaign: number
+          completed_campaigns: number
+          draws: number
+          opponents: number
+          played: number
+          wins: number
+        }[]
+      }
       create_campaign: { Args: { data: Json }; Returns: string }
       join_campaign: { Args: { cid: string }; Returns: undefined }
       manage_member: {

@@ -9,6 +9,7 @@ A responsive, unofficial Warhammer 40,000 narrative campaign tracker. Static Rea
 - Campaign-scoped administrators, independent global administrator assignments, participant deactivation/reactivation, and moderation history.
 - Private image buckets, authorized signed reads, size/type restrictions, captions, main army images, image removal, and retryable failed-upload cleanup.
 - Exported army-list attachments (NewRecruit JSON/ROS/ROSZ, TXT, PDF), with public downloads and owner-controlled uploads.
+- Automatic milestone achievements with privacy-aware confirmed-battle progress on profiles, the command desk, and campaign pages.
 
 ## Prerequisites and initial state
 Use Node 24 LTS (minimum supported 22.12), npm, and an accessible Supabase project or Docker-compatible runtime for local Supabase. The Supabase CLI is a pinned development dependency.
@@ -84,6 +85,26 @@ After bootstrap, the global administration screen can grant/revoke assignments t
 - Battle rows are locked for responses/corrections/resolution; the expected revision is checked so stale pages cannot attest to unseen changes.
 - Only Confirmed battles affect standings: Win 3, Draw 1, Loss 0. Sort by points, then wins; tied values share a competition rank. Usernames provide a stable display order, not a sporting tie-breaker.
 - Statistics are scoped by campaign in SQL, not calculated from whichever battle page happens to be loaded. Inactive commanders retain confirmed historical statistics.
+
+## Automatic milestone achievements
+Commander profiles and the signed-in **Command desk** show overall achievement progress. A campaign's **Achievements** tab lets you choose a commander, including inactive members, and see progress for that campaign only. The selector defaults to your membership when available, otherwise the first visible member.
+
+The seven automatic milestones are:
+- **First Deployment:** 1 confirmed battle.
+- **Campaign Regular:** 5 confirmed battles in the same campaign. Overall progress uses the best single campaign, not combined battles from different campaigns.
+- **Veteran Commander:** 20 confirmed battles across campaigns; shown only in overall progress.
+- **Worthy Adversaries:** 5 distinct other commanders faced in confirmed battles. Repeated encounters with the same player count once.
+- **First Victory:** 1 confirmed win.
+- **Honours Even:** 1 confirmed draw.
+- **Seeing It Through:** at least 1 confirmed battle in a campaign currently marked Completed.
+
+All progress comes from `public.achievement_summary`, a read-only, fixed-search-path **SECURITY INVOKER** RPC. It aggregates complete visible history server-side, not the currently loaded battle page. Multiplayer battles count once toward games played and once per distinct other commander toward opponents. Historical participation still counts after deactivation whenever existing RLS permits reading it.
+
+Only Confirmed reports count; Pending, Disputed, and Rejected reports do not. Progress is derived rather than permanently awarded: corrections, administrative rejection, campaign reopening, and publication/access changes can remove or restore earned status. Existing qualifying history works immediately, with no backfill, award table, client-writeable unlocks, or background job. Historical unlock dates are deliberately omitted because the schema does not record when a campaign first became Completed.
+
+**Visibility is caller-specific.** Public viewers see only accessible public history; authorized members and administrators may see additional private progress. Badges never bypass campaign/battle RLS. The UI explains this and separates cached metrics by player, campaign scope, and viewer. Changes made through the app invalidate queries; other changes appear on the next query refresh/window focus (not through push notifications).
+
+The additive migration `20261126225302_automatic_milestone_achievements.sql` is applied to the connected hosted project and matches its migration history. Generated native RPC types are included. `scripts/check-achievements.sql` checks visibility, campaign scope, opponent deduplication, correction/reconfirmation, and reopening in one rolled-back transaction; it passed both locally in PGlite and against hosted PostgreSQL without retaining fixtures. Browser achievement scenarios use mocked API responses, while hosted API checks separately exercise the real read-only RPC. Manual/voted awards, normalized-faction milestones, and permanent award history are not part of this feature.
 
 ## Authorization and photographs
 All exposed application tables use RLS and explicit grants. Ordinary clients cannot directly write memberships, global roles, participants, confirmations, or battle statuses. Validated PostgreSQL functions are transactional, have fixed search paths, and restrict execution grants. The standings view uses caller security.
