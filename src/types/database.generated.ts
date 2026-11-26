@@ -97,6 +97,57 @@ export type Database = {
           },
         ]
       }
+      army_lists: {
+        Row: {
+          army_id: string
+          file_extension: string
+          file_name: string
+          file_size: number
+          id: string
+          label: string
+          object_path: string
+          uploaded_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          army_id: string
+          file_extension: string
+          file_name: string
+          file_size: number
+          id?: string
+          label?: string
+          object_path: string
+          uploaded_at?: string
+          uploaded_by?: string
+        }
+        Update: {
+          army_id?: string
+          file_extension?: string
+          file_name?: string
+          file_size?: number
+          id?: string
+          label?: string
+          object_path?: string
+          uploaded_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "army_lists_army_id_fkey"
+            columns: ["army_id"]
+            isOneToOne: false
+            referencedRelation: "armies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "army_lists_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       battle_images: {
         Row: {
           battle_id: string

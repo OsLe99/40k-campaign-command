@@ -8,6 +8,7 @@ A responsive, unofficial Warhammer 40,000 narrative campaign tracker. Static Rea
 - Reports with 2–20 participants, army ownership checks, optional victory points, opponent confirmations, disputes, revisions, and audited administrative resolution.
 - Campaign-scoped administrators, independent global administrator assignments, participant deactivation/reactivation, and moderation history.
 - Private image buckets, authorized signed reads, size/type restrictions, captions, main army images, image removal, and retryable failed-upload cleanup.
+- Exported army-list attachments (NewRecruit JSON/ROS/ROSZ, TXT, PDF), with public downloads and owner-controlled uploads.
 
 ## Prerequisites and initial state
 Use Node 24 LTS (minimum supported 22.12), npm, and an accessible Supabase project or Docker-compatible runtime for local Supabase. The Supabase CLI is a pinned development dependency.
@@ -92,6 +93,21 @@ Campaigns are visible when published or to authorized members/admins. Pending/di
 Storage buckets are private. Paths are uploader UUID/entity UUID/random filename, and policies check ownership or campaign participation/administration. JPEG, PNG, and WebP only, up to 8 MiB. Gallery URLs expire after ten minutes and refresh while mounted. A previously issued signed URL may remain usable until it expires after content is unpublished.
 
 Storage object writes and database metadata writes cannot share one transaction. Failed metadata writes attempt object rollback; failed cleanup paths are kept locally for the original uploader to retry from the gallery. Clear browser storage only after resolving pending cleanup. Image deletion removes the object first, then metadata; retry if a metadata removal fails. Deleting the main image clears its army reference. Historical armies referenced by battles cannot be hard-deleted through foreign-key cascades.
+
+Army and battle galleries show the complete photograph in uncropped, proportion-preserving previews. Select a photo to open the larger viewer; use Previous/Next or the left/right arrow keys to browse, and Close, Escape, or the backdrop to exit. The viewer keeps keyboard focus inside its controls, restores focus on closing, and fits portrait/wide images to desktop/mobile screens without changing the originals. Army-card thumbnails also show the complete image. Existing upload, removal, main-image, signed-URL refresh, and authorization rules are unchanged; this gallery update needs no database migration.
+
+## Army list attachments
+Open an army you own and find **Army lists → Attach an army list**. Export your list from NewRecruit or another builder, choose a `.json`, `.ros`, `.rosz`, `.txt`, or `.pdf` file (non-empty, up to 8 MiB), optionally add a label, and select **Attach list**. The original file is preserved; no units are parsed, no archive is extracted, and army lore, photos, campaign registrations, and battles are unchanged.
+
+Multiple lists can be attached to one army. New uploads never replace earlier files. The list displays the original filename, optional label, size, and date. Owners can remove their files with confirmation; global administrators can moderate attachments but cannot upload to someone else's army.
+
+**Attachments are publicly downloadable**, like the army's public profile and photographs, even when it participates in an unpublished campaign. Do not attach private information. The `army-lists` Storage bucket itself stays private; each Download action obtains a fresh 60-second signed URL with download disposition and a sanitized filename. Files are not embedded or previewed. Signed URLs may remain usable until expiry; there is no malware scanning or roster-legality validation.
+
+Failed uploads attempt safe rollback. Cleanup intents are stored in this browser, scoped to the Supabase project and original uploader, before an upload begins. Use **Retry list cleanup** from the same army/account if cleanup fails. Linked files are never removed by this retry, including when a metadata response was lost. Browser storage must be available for uploads; keep it until cleanup is resolved. Removal deletes the Storage object before its metadata: if the entry remains, retry **Remove** to finish. Armies with attachment entries cannot be deleted until those entries are removed.
+
+The attachment schema/bucket and filename hardening migrations are additive, with filenames matching hosted migration history. The generated native types include `army_lists`. SQL authorization checks in `scripts/check-army-lists.sql` always roll back and are also replayed by the PostgreSQL tests. Service/UI/browser tests cover upload/download/removal and partial failures using fixtures; they do not establish actual signed-in hosted Storage HTTP behavior or MIME enforcement. Test a real upload/download/remove round trip after deploying the frontend.
+
+Applied to the connected hosted project on 2026-11-26: `20261126211055_army_list_attachments.sql` and `20261126211354_harden_army_list_filenames.sql`. Hosted checks confirmed RLS, the private 8 MiB bucket, all 14 Data API endpoints, and the rollback-only attachment authorization script. Hosted Supabase prevents direct SQL Storage deletes; that platform guard was not bypassed, and Storage HTTP deletion remains unverified. Native Docker-stack checks are still unavailable locally. Security advisors showed no new attachment-specific findings; the existing [authenticated SECURITY DEFINER notices](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable) and [disabled leaked-password protection warning](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection) remain.
 
 ## Commands and tests
 - `npm run verify`: typecheck, ESLint, Vitest/React Testing Library/PostgreSQL tests, and production build.

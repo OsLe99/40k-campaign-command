@@ -8,11 +8,11 @@ const key = env.VITE_SUPABASE_PUBLISHABLE_KEY
 assert(url && key?.startsWith('sb_publishable_'), 'Configure a project URL and publishable key before hosted verification.')
 const client = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
 
-for (const table of ['campaigns', 'profiles', 'armies', 'campaign_members', 'campaign_armies', 'battles', 'battle_participants', 'battle_responses', 'army_images', 'battle_images', 'global_admins', 'moderation_log', 'standings']) {
+for (const table of ['campaigns', 'profiles', 'armies', 'campaign_members', 'campaign_armies', 'battles', 'battle_participants', 'battle_responses', 'army_images', 'army_lists', 'battle_images', 'global_admins', 'moderation_log', 'standings']) {
   const { error } = await client.from(table).select('*', { head: true }).limit(1)
   assert.equal(error, null, `Anonymous read failed for ${table}: ${error?.message}`)
 }
-console.log('PASS: all 13 table/view read endpoints respond through the real Data API.')
+console.log('PASS: all 14 table/view read endpoints respond through the real Data API.')
 
 const rpc = await client.rpc('create_campaign', { data: { name: 'Unauthorized verification attempt' } })
 assert.equal(rpc.error?.code, '42501', 'Anonymous write RPC must be denied by grants.')

@@ -219,4 +219,76 @@ describe('PostgreSQL migration and authorization', () => {
     await pg.exec(await readFile(new URL('../../scripts/check-themes.sql', import.meta.url), 'utf8'))
     expect(await scalar('select count(*)::int from auth.users')).toBe(before)
   })
+  it('enforces attachment paths, ownership, metadata limits, and immutable associations', async () => {
+    await as(opponent)
+    const attachment = '30000000-0000-0000-0000-000000000001'
+    const path = `${opponent}/${army2}/${attachment}.json`
+    await pg.query("insert into storage.objects(bucket_id,name) values('army-lists',$1)", [path])
+    const insert = (changes: Record<string, unknown> = {}) => {
+      const row = { id: attachment, army_id: army2, uploaded_by: opponent, object_path: path, file_name: 'roster.json', file_extension: 'json', file_size: 200, ...changes }
+      return pg.query(`insert into public.army_lists(${Object.keys(row).join(',')}) values(${Object.keys(row).map((_, i) => `$${i + 1}`).join(',')})`, Object.values(row))
+    }
+    await expect(insert({ uploaded_by: owner })).rejects.toThrow()
+    await expect(insert({ army_id: army1 })).rejects.toThrow()
+    for (const file_name of ['../roster.json', 'folder\\roster.json', 'bad\nname.json', 'roster.exe']) {
+      await expect(insert({ file_name })).rejects.toThrow(/check constraint/)
+    }
+    for (const file_size of [0, 8388609]) await expect(insert({ file_size })).rejects.toThrow(/check constraint/)
+    await insert()
+    await expect(pg.query("update public.army_lists set label='changed' where id=$1", [attachment])).rejects.toThrow(/permission denied/)
+    await expect(pg.query("insert into storage.objects(bucket_id,name) values('army-lists',$1)", [`${opponent}/${army1}/${attachment}.json`])).rejects.toThrow(/row-level security/)
+    await expect(pg.query("insert into storage.objects(bucket_id,name) values('army-lists',$1)", [`${opponent}/${army2}/bad.html`])).rejects.toThrow(/row-level security/)
+    await as(null)
+    expect(await scalar('select count(*)::int from public.army_lists where id=$1', [attachment])).toBe(1)
+    expect(await scalar("select count(*)::int from storage.objects where bucket_id='army-lists' and name=$1", [path])).toBe(1)
+    await expect(pg.query('delete from public.army_lists where id=$1', [attachment])).rejects.toThrow(/permission denied/)
+    await pg.exec('reset role')
+    const visitor = '00000000-0000-0000-0000-000000000004'
+    await pg.query('insert into auth.users values($1)', [visitor])
+    await as(visitor)
+    expect((await pg.query('delete from public.army_lists where id=$1 returning id', [attachment])).rows).toEqual([])
+    expect((await pg.query("delete from storage.objects where bucket_id='army-lists' and name=$1 returning id", [path])).rows).toEqual([])
+    await as(opponent)
+    await pg.query("delete from storage.objects where bucket_id='army-lists' and name=$1", [path])
+    await pg.query('delete from public.army_lists where id=$1', [attachment])
+  })
+  it('allows orphan cleanup and global moderation without granting admin upload access', async () => {
+    const attachment = '30000000-0000-0000-0000-000000000002'
+    const path = `${opponent}/${army2}/${attachment}.pdf`
+    await as(opponent)
+    await pg.query("insert into storage.objects(bucket_id,name) values('army-lists',$1)", [path])
+    await as(null)
+    expect(await scalar("select count(*)::int from storage.objects where bucket_id='army-lists' and name=$1", [path])).toBe(0)
+    await as(opponent)
+    await pg.query('insert into public.army_lists(id,army_id,object_path,file_name,file_extension,file_size) values($1,$2,$3,$4,$5,$6)', [attachment, army2, path, 'list.pdf', 'pdf', 300])
+    await as(stranger)
+    await expect(pg.query("insert into storage.objects(bucket_id,name) values('army-lists',$1)", [`${stranger}/${army2}/${attachment}.pdf`])).rejects.toThrow(/row-level security/)
+    await pg.query("delete from storage.objects where bucket_id='army-lists' and name=$1", [path])
+    await pg.query('delete from public.army_lists where id=$1', [attachment])
+    expect(await scalar('select count(*)::int from public.army_lists where id=$1', [attachment])).toBe(0)
+    await as(opponent)
+    await pg.query("insert into storage.objects(bucket_id,name) values('army-lists',$1)", [path])
+    await pg.query("delete from storage.objects where bucket_id='army-lists' and name=$1", [path])
+    expect(await scalar("select count(*)::int from storage.objects where bucket_id='army-lists' and name=$1", [path])).toBe(0)
+  })
+  it('requires an existing object and prevents army deletion from orphaning attachments', async () => {
+    await as(opponent)
+    const attachment = '30000000-0000-0000-0000-000000000003'
+    const army = String(await scalar("insert into public.armies(name,faction) values('Attachment-only army','Imperium') returning id"))
+    const path = `${opponent}/${army}/${attachment}.txt`
+    const insert = () => pg.query('insert into public.army_lists(id,army_id,object_path,file_name,file_extension,file_size) values($1,$2,$3,$4,$5,$6)', [attachment, army, path, 'list.txt', 'txt', 50])
+    await expect(insert()).rejects.toThrow(/row-level security/)
+    await pg.query("insert into storage.objects(bucket_id,name) values('army-lists',$1)", [path])
+    await insert()
+    await expect(pg.query('delete from public.armies where id=$1', [army])).rejects.toThrow(/foreign key/)
+    await pg.query("delete from storage.objects where bucket_id='army-lists' and name=$1", [path])
+    await pg.query('delete from public.army_lists where id=$1', [attachment])
+    await pg.query('delete from public.armies where id=$1', [army])
+  })
+  it('replays attachment hosted verification without retaining fixtures', async () => {
+    await pg.exec('reset role')
+    const before = await scalar('select count(*)::int from auth.users')
+    await pg.exec(await readFile(new URL('../../scripts/check-army-lists.sql', import.meta.url), 'utf8'))
+    expect(await scalar('select count(*)::int from auth.users')).toBe(before)
+  })
 })
