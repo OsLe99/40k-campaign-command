@@ -24,6 +24,11 @@ async function allRows<T>(fetchPage: (from: number, to: number) => PromiseLike<{
   }
 }
 export const api = {
+  achievementSummary: async (playerId: string, campaignId?: string) => {
+    const rows = await rpc('achievement_summary', { target_player: playerId, ...(campaignId ? { target_campaign: campaignId } : {}) })
+    if (!rows?.[0]) throw new Error('Achievement progress is unavailable. Please try again.')
+    return rows[0]
+  },
   campaigns: async (page: number) => unwrap(await db().from('campaigns').select('*').order('created_at', { ascending: false }).order('id').range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)),
   campaign: async (id: string) => unwrap(await db().from('campaigns').select('*').eq('id', id).single()),
   profiles: () => allRows((from, to) => db().from('profiles').select('*').order('display_name').order('id').range(from, to)),

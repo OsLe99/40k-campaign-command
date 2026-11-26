@@ -7,7 +7,8 @@ import { useAuth } from '../contexts/AuthContext'
 import { useAction } from '../hooks/useAction'
 import { date, rankStandings } from '../lib/utils'
 import { Button } from '../components/ui/button'
-import { Badge, Empty, ErrorBox, Feedback, Loading, PageHeader, Pagination } from '../components/ui/shared'
+import { Badge, Empty, ErrorBox, Feedback, Field, Loading, PageHeader, Pagination } from '../components/ui/shared'
+import { AchievementPanel } from '../components/AchievementPanel'
 
 export function CampaignPage() {
   const { id = '' } = useParams()
@@ -15,6 +16,7 @@ export function CampaignPage() {
   const action = useAction()
   const [page, setPage] = useState(0)
   const [tab, setTab] = useState('overview')
+  const [achievementPlayer, setAchievementPlayer] = useState('')
   const campaign = useQuery({ queryKey: ['campaign', id], queryFn: () => api.campaign(id) })
   const members = useQuery({ queryKey: ['members', id], queryFn: () => api.members(id) })
   const profiles = useQuery({ queryKey: ['profiles'], queryFn: api.profiles })
@@ -28,6 +30,7 @@ export function CampaignPage() {
   if (!campaign.data) return <ErrorBox error={campaign.error || new Error('Campaign not found or not visible.')} />
   const c = campaign.data
   const membership = members.data?.find(m => m.player_id === user?.id)
+  const selectedAchievementPlayer = members.data?.find(m => m.player_id === achievementPlayer)?.player_id || membership?.player_id || members.data?.[0]?.player_id || ''
   const isAdmin = (membership?.role === 'CampaignAdmin' && membership.is_active) || admins.data?.some(a => a.player_id === user?.id)
   const registeredIds = new Set(registrations.data?.map(r => r.army_id))
   const registered = armies.data?.filter(a => registeredIds.has(a.id)) || []
@@ -46,9 +49,18 @@ export function CampaignPage() {
       <div className="stat"><Swords /><strong>{registered.length}</strong><span>Registered armies</span></div>
       <div className="stat"><Trophy /><strong>{count.data ?? '—'}</strong><span>Confirmed battles</span></div>
     </div>
-    <nav className="tabs" aria-label="Campaign sections">{['overview', 'standings', 'battles', 'forces'].map(t =>
+    <nav className="tabs" aria-label="Campaign sections">{['overview', 'standings', 'battles', 'forces', 'achievements'].map(t =>
       <Button key={t} variant={tab === t ? 'default' : 'ghost'} onClick={() => setTab(t)}>{t}</Button>)}</nav>
     <ErrorBox error={members.error || profiles.error || standings.error || count.error || battles.error || armies.error || registrations.error || admins.error} />
+    {tab === 'achievements' && (members.isPending || profiles.isPending ? <Loading /> : !members.error && !profiles.error && (
+      selectedAchievementPlayer ? <AchievementPanel playerId={selectedAchievementPlayer} campaignId={id}>
+        <Field label="Achievement commander"><select value={selectedAchievementPlayer} onChange={event => setAchievementPlayer(event.target.value)}>
+          {members.data?.map(member => <option key={member.player_id} value={member.player_id}>
+            {profiles.data?.find(profile => profile.id === member.player_id)?.display_name || member.player_id}{member.is_active ? '' : ' (inactive)'}
+          </option>)}
+        </select></Field>
+      </AchievementPanel> : <Empty>No commanders have joined this campaign yet.</Empty>
+    ))}
     {tab === 'overview' && <div className="two-column"><section className="panel"><p className="eyebrow">THE WAR ZONE</p><h2>Campaign briefing</h2><p className="prose">{c.description || 'No briefing has been posted.'}</p><h3>Background lore</h3><p className="prose">{c.lore || 'The story is yet to unfold.'}</p></section>
       <section className="panel"><p className="eyebrow">CHAIN OF COMMAND</p><h2>Commanders</h2>{members.data?.filter(m => m.is_active).map(m => <div className="list-row" key={m.id}><Link to={`/players/${m.player_id}`}>{profiles.data?.find(p => p.id === m.player_id)?.display_name || 'Commander'}</Link><Badge>{m.role}</Badge></div>)}</section></div>}
     {tab === 'standings' && <section className="panel"><h2>Campaign standings</h2><p className="muted">Win 3 · Draw 1 · Loss 0. Confirmed battles only. Equal points and wins share a rank.</p>{standings.isPending ? <Loading /> : standings.data?.length ? <div className="table-scroll"><table><thead><tr>{['Rank', 'Commander', 'Played', 'W', 'D', 'L', 'Points'].map(h => <th key={h}>{h}</th>)}</tr></thead><tbody>{rankStandings(standings.data).map(r => <tr key={r.player_id}><td className="rank">{String(r.rank).padStart(2, '0')}</td><td><Link to={`/players/${r.player_id}`}>{r.display_name}</Link><small>@{r.username}</small></td><td>{r.played}</td><td>{r.wins}</td><td>{r.draws}</td><td>{r.losses}</td><td className="points">{r.points}</td></tr>)}</tbody></table></div> : <Empty>No commanders have joined yet.</Empty>}</section>}
